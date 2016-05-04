@@ -1,22 +1,21 @@
 def parse(tokens):
   if len(tokens) == 0: return None
 
-  if tokens[0]['type'] == 'lparen':
-    return {
-      'type': 'application',
-      'function': tokens[1],
-      'arg': tokens[2]
-    }
-  elif tokens[0]['type'] == 'lambda':
-    return {
-      'type': 'lambda',
-      'arg': tokens[1]['name'],
-      'body': parse([tokens[3]])
-    }
+  result, _ = parse_single(tokens)
 
-  return tokens[0]
+  return result
 
 def parse_single(tokens):
+  if tokens[0]['type'] == 'lparen':
+    fn, rest1 = parse_single(tokens[1:])
+    arg, rest2 = parse_single(rest1)
+
+    return ({
+      'type': 'application',
+      'function': fn,
+      'arg': arg
+    }, rest2[1:])
+
   if tokens[0]['type'] == 'lambda':
     body, rest = parse_single(tokens[3:])
     return ({
@@ -82,5 +81,26 @@ if __name__ == '__main__':
     'arg': {
       'type': 'var',
       'name': 'y'
+    }
+  }
+
+  assert parse([
+    { 'type': 'lambda' },
+    { 'type': 'var', 'name': 'x' },
+    { 'type': 'dot' },
+    { 'type': 'lambda' },
+    { 'type': 'var', 'name': 'y' },
+    { 'type': 'dot' },
+    { 'type': 'var', 'name': 'x' }
+  ]) == {
+      'type': 'lambda',
+      'arg': 'x',
+      'body': {
+        'type': 'lambda',
+        'arg': 'y',
+        'body': {
+          'type': 'var',
+          'name': 'x'
+        }
     }
   }
