@@ -22,7 +22,7 @@ def tokenize(code):
       new_token = {'type': 'dot'}
 
     if(current_char == '\\'):
-      new_token = {'type': 'lamda'}
+      new_token = {'type': 'lambda'}
 
     if(new_token != 0):
       tokens.append(new_token)
