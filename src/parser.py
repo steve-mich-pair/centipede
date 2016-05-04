@@ -1,12 +1,8 @@
 def parse(tokens):
-  if len(tokens) == 0: return None
-
-  result, _ = parse_single(tokens)
-
-  return result
+  return parse_single(tokens)[0]
 
 def parse_single(tokens):
-  if tokens[0]['type'] == 'lparen':
+  def parse_application():
     fn, rest1 = parse_single(tokens[1:])
     arg, rest2 = parse_single(rest1)
 
@@ -16,7 +12,7 @@ def parse_single(tokens):
       'arg': arg
     }, rest2[1:])
 
-  if tokens[0]['type'] == 'lambda':
+  def parse_lambda():
     body, rest = parse_single(tokens[3:])
     return ({
       'type': 'lambda',
@@ -24,10 +20,15 @@ def parse_single(tokens):
       'body': body
     }, rest)
 
+  if tokens[0]['type'] == 'lparen':
+    return parse_application()
+
+  if tokens[0]['type'] == 'lambda':
+    return parse_lambda()
+
   return (tokens[0], tokens[1:])
 
 if __name__ == '__main__':
-  assert parse([]) == None
   assert parse([{ 'type': 'var', 'name': 'x' }]) == { 'type': 'var', 'name': 'x' }
   assert parse([
     { 'type': 'lparen' },
@@ -54,8 +55,7 @@ if __name__ == '__main__':
     'type': 'lambda',
     'arg': 'x',
     'body': {
-      'type': 'var',
-      'name': 'x'
+      'type': 'var', 'name': 'x'
     }
   }
 
@@ -85,14 +85,47 @@ if __name__ == '__main__':
   }
 
   assert parse([
+    { 'type': 'lparen' },
+
+    { 'type': 'lambda' },
+    { 'type': 'var', 'name': 'x' },
+    { 'type': 'dot' },
+    { 'type': 'var', 'name': 'x' },
+
+    { 'type': 'lambda' },
+    { 'type': 'var', 'name': 'y' },
+    { 'type': 'dot' },
+    { 'type': 'var', 'name': 'y' },
+
+    { 'type': 'rparen' }
+  ]) == {
+    'type': 'application',
+    'function': {
+      'type': 'lambda',
+      'arg': 'x',
+      'body': {
+        'type': 'var',
+        'name': 'x'
+      }
+    },
+    'arg': {
+      'type': 'lambda',
+      'arg': 'y',
+      'body': {
+        'type': 'var',
+        'name': 'y'
+      }
+    }
+  }
+
+  assert parse([
     { 'type': 'lambda' },
     { 'type': 'var', 'name': 'x' },
     { 'type': 'dot' },
     { 'type': 'lambda' },
     { 'type': 'var', 'name': 'y' },
     { 'type': 'dot' },
-    { 'type': 'var', 'name': 'x' }
-  ]) == {
+    { 'type': 'var', 'name': 'x' } ]) == {
       'type': 'lambda',
       'arg': 'x',
       'body': {
@@ -104,3 +137,5 @@ if __name__ == '__main__':
         }
     }
   }
+
+  print 'all tests pass!'
