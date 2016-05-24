@@ -10,34 +10,23 @@ def lookup(name, env):
 
 def eval_with_env(ast, env):
   if ast['type'] == 'application':
-    fn = ast['function']
-    name = fn['arg']
-    value = ast['arg']
+    closure = eval_with_env(ast['function'], env)
+    value = eval_with_env(ast['arg'], env)
 
-    return eval_with_env(fn['body'], [(name, value)] + env)
+    return eval_with_env(
+      closure['body'],
+      [(closure['arg'], value)] + closure['env'] + env
+    )
 
   if ast['type'] == 'var':
     return lookup(ast['name'], env)
 
-  return ast
-
-def id(arg_name = 'x'):
-  return {
-    'type': 'lambda',
-    'arg': arg_name,
-    'body': {
-      'type': 'var', 'name': arg_name
+  if ast['type'] == 'lambda':
+    return {
+      'type': 'closure',
+      'arg': ast['arg'],
+      'body': ast['body'],
+      'env': env
     }
-  }
 
-def app(fn, arg):
-  return {
-    'type': 'application',
-    'function': fn,
-    'arg': arg
-  }
-
-if __name__ == '__main__':
-  assert evaluate(id()) == id()
-
-  assert evaluate(app(id('x'), id('y'))) == id('y')
+  return ast
